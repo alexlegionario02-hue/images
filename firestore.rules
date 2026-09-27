@@ -1,0 +1,85 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all unknown paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['id', 'displayName', 'currentLevel', 'currentMode', 'soundEnabled', 'completedLevels', 'totalSolved', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'displayName', 'currentLevel', 'currentMode', 'soundEnabled', 'completedLevels', 'totalSolved', 'createdAt', 'updatedAt'])
+        && data.id is string && data.id.size() > 0 && data.id.size() <= 128
+        && data.displayName is string && data.displayName.size() <= 100
+        && data.currentLevel is int && data.currentLevel >= 1
+        && (data.currentMode == 'zen' || data.currentMode == 'challenging' || data.currentMode == 'master')
+        && data.soundEnabled is bool
+        && data.completedLevels is list && data.completedLevels.size() <= 500
+        && data.totalSolved is int && data.totalSolved >= 0
+        && data.createdAt is string && data.createdAt.size() <= 64
+        && data.updatedAt is string && data.updatedAt.size() <= 64;
+    }
+
+    function isValidHarmony(data) {
+      return data.keys().hasAll(['id', 'userId', 'userDisplayName', 'mode', 'level', 'coverage', 'createdAt'])
+        && data.keys().hasOnly(['id', 'userId', 'userDisplayName', 'mode', 'level', 'coverage', 'createdAt'])
+        && data.id is string && data.id.size() > 0 && data.id.size() <= 128
+        && data.userId is string && data.userId.size() > 0 && data.userId.size() <= 128
+        && data.userDisplayName is string && data.userDisplayName.size() <= 100
+        && (data.mode == 'zen' || data.mode == 'challenging' || data.mode == 'master')
+        && data.level is int && data.level >= 1
+        && data.coverage is int && data.coverage >= 0 && data.coverage <= 100
+        && data.createdAt is string && data.createdAt.size() <= 64;
+    }
+
+    // User profiles & saves: strictly isolated per user
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+      allow list: if false;
+
+      allow create: if isSignedIn()
+        && isValidId(userId)
+        && request.auth.uid == userId
+        && isValidUserProfile(incoming())
+        && incoming().id == request.auth.uid;
+
+      allow update: if isSignedIn()
+        && isValidId(userId)
+        && request.auth.uid == userId
+        && isValidUserProfile(incoming())
+        && incoming().id == existing().id
+        && incoming().createdAt == existing().createdAt;
+
+      allow delete: if false;
+    }
+
+    // Global harmony records: anyone can read recent wins, authenticated users can publish their own
+    match /harmonies/{harmonyId} {
+      allow get, list: if true;
+
+      allow create: if isSignedIn()
+        && isValidId(harmonyId)
+        && isValidHarmony(incoming())
+        && incoming().userId == request.auth.uid;
+
+      allow update, delete: if false;
+    }
+  }
+}

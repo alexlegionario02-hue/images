@@ -1,0 +1,105 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with game progress and settings",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The user's Firebase Auth UID",
+          "maxLength": 128
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The user's display name",
+          "maxLength": 100
+        },
+        "currentLevel": {
+          "type": "integer",
+          "description": "The current level reached by the player"
+        },
+        "currentMode": {
+          "type": "string",
+          "description": "The current game difficulty mode",
+          "enum": ["zen", "challenging", "master"]
+        },
+        "soundEnabled": {
+          "type": "boolean",
+          "description": "Whether procedural soothing audio is enabled"
+        },
+        "completedLevels": {
+          "type": "array",
+          "description": "List of completed level keys e.g. mode_level",
+          "items": {
+            "type": "string",
+            "maxLength": 32
+          }
+        },
+        "totalSolved": {
+          "type": "integer",
+          "description": "Total count of harmonies completed"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last update timestamp"
+        }
+      },
+      "required": ["id", "displayName", "currentLevel", "currentMode", "soundEnabled", "completedLevels", "totalSolved", "createdAt", "updatedAt"]
+    },
+    "HarmonyRecord": {
+      "title": "HarmonyRecord",
+      "description": "Public record of a completed harmony level for community feed",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique record id",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "description": "Author UID",
+          "maxLength": 128
+        },
+        "userDisplayName": {
+          "type": "string",
+          "description": "Player name",
+          "maxLength": 100
+        },
+        "mode": {
+          "type": "string",
+          "description": "Game mode",
+          "enum": ["zen", "challenging", "master"]
+        },
+        "level": {
+          "type": "integer",
+          "description": "Level number"
+        },
+        "coverage": {
+          "type": "integer",
+          "description": "Map coverage percentage"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Completion timestamp"
+        }
+      },
+      "required": ["id", "userId", "userDisplayName", "mode", "level", "coverage", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Private user profile and cloud save state"
+    },
+    "/harmonies/{harmonyId}": {
+      "schema": "HarmonyRecord",
+      "description": "Global community flow harmony feed"
+    }
+  }
+}

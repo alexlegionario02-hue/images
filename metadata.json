@@ -1,0 +1,8 @@
+{
+  "name": "Cellflow",
+  "description": "Meditative Voronoi puzzle game with harmonic flow path connections and Firebase cloud sync.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
